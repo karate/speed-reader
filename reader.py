@@ -3,11 +3,42 @@
 import pygame
 from time import sleep
 
+class Speeder():
+  min_wpm = None
+  max_wpm = None
+  delay = None
+  min_delay = None
+  max_delay = None
+
+  def __init__(self, min_wpm, max_wpm):
+    self.min_wpm = min_wpm
+    self.max_wpm = max_wpm
+    self.delay = self.calculate_delay_from_wpm(min_wpm)
+    self.min_delay = self.calculate_delay_from_wpm(max_wpm)
+    self.max_delay = self.calculate_delay_from_wpm(min_wpm)
+
+  def calculate_delay_from_wpm(self, wordsPerMinute):
+    return 60 / wordsPerMinute
+
+  def calculate_wpm_from_delay(self, delay):
+    return 60 / delay
+
+  def get_delay(self):
+    return self.delay
+
+  def get_wpm(self):
+    return self.calculate_wpm_from_delay(self.delay);
+
+  def increase_delay(self):
+    if self.delay < self.max_delay:
+      self.delay += 0.02
+
+  def decrease_delay(self):
+    if self.delay > self.min_delay:
+      self.delay -= 0.02
+
 # Initialize the game engine
 pygame.init()
-
-def get_delay(wordsPerMinute):
-  return 60/wordsPerMinute
 
 def main():
 
@@ -23,8 +54,6 @@ def main():
   # Set window size
   window_size = (400, 150)
   # Set speed
-  wpm = 200
-  delay = get_delay(wpm)
 
   # Basic colors
   WHITE = (255, 255, 255)
@@ -36,6 +65,7 @@ def main():
 
   # Select the font to use, size, bold, italics
   font = pygame.font.SysFont('Calibri', 40, False, False)
+  wpm_font = pygame.font.SysFont('Calibri', 15, False, False)
    
   # Clear the screen to white
   screen.fill(WHITE)
@@ -45,7 +75,9 @@ def main():
    
   # Used to manage how fast the screen updates
   clock = pygame.time.Clock()
-   
+  
+  speeder = Speeder(250, 600)
+
   # -------- Main Program Loop -----------
   while not done:
       # --- Main event loop
@@ -55,8 +87,17 @@ def main():
    
       # --- Game logic should go here
       
+      pressed = pygame.key.get_pressed()
+      if pressed[pygame.K_q]:
+        done = True
+      elif pressed[pygame.K_UP]:
+        speeder.decrease_delay()
+      elif pressed[pygame.K_DOWN]:
+        speeder.increase_delay()
+
       # Go a little bit faster each time
-      delay = delay-0.001
+      # if delay < max_delay:
+      #  delay = delay-0.001
       # Get next word or quit
       try:
         word = words.__next__()
@@ -67,9 +108,9 @@ def main():
       text = font.render(word, True, BLACK)
       # double the delay if the word end with a full-stop
       if word[-1] == '.':
-        frame_delay = delay * 2
+        frame_delay = speeder.get_delay() * 2
       else:
-        frame_delay = delay
+        frame_delay = speeder.get_delay()
 
       # Calculate text position
       text_position = text.get_rect(center=(window_size[0]/2, window_size[1]/2))
@@ -81,14 +122,25 @@ def main():
       
       # Add text to screen
       screen.blit(text, text_position)
+
+      # Add wpm
+      wpm = speeder.get_wpm();
+      wpm_text = wpm_font.render(str(int(speeder.get_wpm())) + 'wpm', True, BLACK)
+      screen_width = pygame.display.get_surface().get_width()
+      screen_height = pygame.display.get_surface().get_height()
+      wpm_text_width = wpm_text.get_rect().width
+      wpm_text_height = wpm_text.get_rect().height
+      wpm_position = (screen_width - wpm_text_width, screen_height - wpm_text_height)
+      screen.blit(wpm_text, wpm_position)
       
       # Redraw screen
       pygame.display.flip()
 
       # Add some delay
-      #  print(str(int(60/delay)) + 'wpm')
+      print(str(int(60/frame_delay)) + 'wpm')
       sleep(frame_delay)
    
       # Limit to 30 frames per second
       clock.tick(30)
+
 main()
