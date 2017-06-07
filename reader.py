@@ -34,14 +34,11 @@ class Speeder():
 
   def increase_delay(self):
     if self.delay < self.max_delay:
-      self.delay += 10
+      self.delay += 1
 
   def decrease_delay(self):
     if self.delay > self.min_delay:
-      self.delay -= 10
-
-# Initialize the game engine
-pygame.init()
+      self.delay -= 1
 
 def main():
 
@@ -78,12 +75,8 @@ def main():
    
   # Used to manage how fast the screen updates
   clock = pygame.time.Clock()
-  
-  speeder = Speeder(250, 600)
 
-  # Declare custom event to proceed to the next word
-  NEXT_WORD = pygame.USEREVENT + 1
-  pygame.time.set_timer(NEXT_WORD, speeder.get_delay())
+  speeder = Speeder(250, 600)
 
   def update_word(screen, word, speeder):
     text = font.render(word, True, BLACK)
@@ -118,48 +111,46 @@ def main():
     pygame.display.flip()
 
   # -------- Main Program Loop -----------
+  time = 0
   while not done:
-      # --- Main event loop
-      for event in pygame.event.get():  # User did something
-        # If user clicked close
-        if event.type == pygame.QUIT:
-          # Flag that we are done so we exit this loop
-          done = True
-        # If the time has come to show the next word
-        elif event.type == NEXT_WORD:
-          try:
-            word = words.__next__()
-          #  If there are not any more words, exit
-          except StopIteration:
-            done = True
-            continue
-
-          update_word(screen, word, speeder)
-      
-      # Get user's key presses
-      pressed = pygame.key.get_pressed()
-      # 'Q' quits the application
-      if pressed[pygame.K_q]:
+    # --- Main event loop
+    for event in pygame.event.get():  # User did something
+      # If user clicked close
+      if event.type == pygame.QUIT:
+        # Flag that we are done so we exit this loop
         done = True
 
-      # UP arrow increases speed
-      elif pressed[pygame.K_UP]:
-        # Decrease delay
-        speeder.decrease_delay()
-        # Cancel NEXT_WORD event
-        pygame.time.set_timer(NEXT_WORD, 0)
-        # Create a new one with the new delay
-        pygame.time.set_timer(NEXT_WORD, speeder.get_delay())
-      # DOWN arrow decreases speed
-      elif pressed[pygame.K_DOWN]:
-        # Increase delay
-        speeder.increase_delay()
-        # Cancel NEXT_WORD event
-        pygame.time.set_timer(NEXT_WORD, 0)
-        # Create a new one with the new delay
-        pygame.time.set_timer(NEXT_WORD, speeder.get_delay())
+    time += clock.get_time()
 
-      # Limit to 30 frames per second
-      clock.tick(30)
+    if (time > speeder.get_delay()):
+      try:
+        word = words.__next__()
+      #  If there are not any more words, exit
+      except StopIteration:
+        done = True
+        continue
+      update_word(screen, word, speeder)
+      time= 0
+
+    # Get user's key presses
+    pressed = pygame.key.get_pressed()
+    # 'q' quits the application
+    if pressed[pygame.K_q]:
+      done = True
+
+    # UP arrow increases speed
+    elif pressed[pygame.K_UP]:
+      # Decrease delay
+      speeder.decrease_delay()
+    # DOWN arrow decreases speed
+    elif pressed[pygame.K_DOWN]:
+      # Increase delay
+      speeder.increase_delay()
+
+    # Limit to 30 frames per second
+    clock.tick(30)
+
+# Initialize the game engine
+pygame.init()
 
 main()
